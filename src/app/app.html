@@ -2,7 +2,10 @@
   <header class="intro">
     <span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     <h1>Three Moves<span>.</span></h1>
-    <p>Turn off every light in three moves or fewer.</p>
+    <p class="challenge-date">
+      Daily Challenge · <time [attr.datetime]="date()">{{ date() }}</time> UTC
+    </p>
+    <p>Turn off every light in three moves.</p>
   </header>
 
   <section class="puzzle" aria-label="Light puzzle">
@@ -13,21 +16,21 @@
             <span [class.available]="slot < movesLeft()"></span>
           }
         </div>
-        <span role="status">
+        <div role="status">
+          <div>{{ movesLeft() }} {{ movesLeft() === 1 ? 'move left' : 'moves left' }}</div>
           @switch (status()) {
             @case ('won') {
-              You win! All lights are off.
+              <div>You win! All lights are off.</div>
             }
             @case ('lost') {
-              Out of moves. Try again!
-            }
-            @default {
-              {{ movesLeft() }} {{ movesLeft() === 1 ? 'move left' : 'moves left' }}
+              <div>Out of moves. Try again!</div>
             }
           }
-        </span>
+        </div>
       </div>
-      <button type="button" class="restart" (click)="restart()">Restart</button>
+      <button type="button" class="restart" [disabled]="status() === 'won'" (click)="restart()">
+        {{ status() === 'lost' ? 'Retry' : 'Restart' }}
+      </button>
     </div>
 
     <div class="board" role="group" aria-label="4 by 4 light board">
