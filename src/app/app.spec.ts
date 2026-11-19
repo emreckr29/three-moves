@@ -36,6 +36,7 @@ describe('Daily Challenge', () => {
   afterEach(() => {
     TestBed.resetTestingModule();
     vi.useRealTimers();
+    vi.unstubAllGlobals();
     localStorage.clear();
   });
 
@@ -58,6 +59,8 @@ describe('Daily Challenge', () => {
     const first = openGame();
     const initialLights = first.lights();
     for (let move = 0; move < 3; move++) first.play(0);
+    const score = first.lights().filter((lit) => lit === 'true').length;
+    expect(first.status()).toContain(`${score} of 16 lights left`);
     first.fixture.destroy();
 
     const reopened = openGame();
@@ -65,6 +68,9 @@ describe('Daily Challenge', () => {
     expect(reopened.status()).toContain('Out of moves');
     expect(reopened.tiles.every((tile) => tile.disabled)).toBe(true);
     expect(reopened.restart.textContent).toContain('Retry');
+    expect(reopened.fixture.nativeElement.querySelector('.results .metrics').textContent).toContain(
+      `${score} / 16`,
+    );
 
     reopened.restart.click();
     reopened.fixture.detectChanges();
@@ -72,7 +78,21 @@ describe('Daily Challenge', () => {
     expect(reopened.lights()).toEqual(initialLights);
     reopened.fixture.destroy();
 
-    expect(openGame().status()).toContain('3 moves left');
+    const retry = openGame();
+    expect(retry.status()).toContain('3 moves left');
+    for (const index of [4, 13, 14]) retry.play(index);
+    expect(retry.status()).toContain('0 of 16 lights left');
+    retry.fixture.destroy();
+
+    const solved = openGame();
+    const page = solved.fixture.nativeElement as HTMLElement;
+    expect(
+      Array.from(page.querySelectorAll('.results dd'), (value) => value.textContent?.trim()),
+    ).toEqual([`${score} / 16`, '0 / 16', '2']);
+    expect(page.querySelector('.outcome')?.textContent?.trim()).toBe('Solved');
+    expect(
+      Array.from(page.querySelectorAll('.statistics dd'), (value) => value.textContent?.trim()),
+    ).toEqual(['1', '1', '1']);
   });
 
   it('preserves a win after refresh and ignores a stale attempt from another tab', () => {
@@ -106,7 +126,59 @@ describe('Daily Challenge', () => {
     expect(game.status()).not.toContain('You win!');
     expect(game.lights()).not.toEqual(initialLights);
     expect(game.tiles.every((tile) => !tile.disabled)).toBe(true);
-    expect(localStorage.getItem(progressKey(date, 'win'))).toBe('[[1,0],[3,1],[3,2]]');
+    expect(JSON.parse(localStorage.getItem(progressKey(date, 'win'))!)).toEqual({
+      moves: [
+        [1, 0],
+        [3, 1],
+        [3, 2],
+      ],
+      result: { first: 0, best: 0, attempts: 1 },
+    });
+    expect(game.fixture.nativeElement.querySelector('.results')).toBeNull();
+    expect(
+      Array.from(
+        (game.fixture.nativeElement as HTMLElement).querySelectorAll('.statistics dd'),
+        (value) => value.textContent?.trim(),
+      ),
+    ).toEqual(['1', '1', '1']);
+  });
+
+  it('recovers a saved v0.2 win and includes it in statistics', () => {
+    localStorage.setItem(`three-moves:v0.2:${date}:win`, '[[1,0],[3,1],[3,2]]');
+
+    const game = openGame();
+    expect(game.status()).toContain('You win!');
+    expect(game.restart.disabled).toBe(true);
+    expect(
+      game.fixture.nativeElement.querySelector('.statistics dd:last-child').textContent.trim(),
+    ).toBe('1');
+  });
+
+  it.each(['native', 'clipboard'] as const)('shares the daily result using %s', async (method) => {
+    const game = openGame();
+    for (const index of [4, 13, 14]) game.play(index);
+    const share = vi.fn().mockResolvedValue(undefined);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', {
+      share: method === 'native' ? share : undefined,
+      clipboard: { writeText },
+    });
+
+    game.fixture.nativeElement.querySelector('.share').click();
+    await game.fixture.whenStable();
+    game.fixture.detectChanges();
+
+    const text =
+      'Three Moves — 2026-11-19 UTC\nFirst attempt: 0/16 lights left\nBest result: 0/16 lights left\nSolved in 1 attempt';
+    if (method === 'native') {
+      expect(share).toHaveBeenCalledWith({ text });
+      expect(writeText).not.toHaveBeenCalled();
+    } else {
+      expect(writeText).toHaveBeenCalledWith(text);
+      expect(game.fixture.nativeElement.querySelector('.share-feedback').textContent).toContain(
+        'Result copied',
+      );
+    }
   });
 
   it('refreshes a backgrounded page on visibility change and rejects corrupt saves', () => {
