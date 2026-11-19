@@ -164,7 +164,8 @@ h1 span {
   outline-offset: 2px;
 }
 
-.restart:focus-visible {
+.restart:focus-visible,
+.share:focus-visible {
   outline: 2px solid #39582d;
   outline-offset: 2px;
 }
@@ -175,6 +176,111 @@ h1 span {
   font-size: 0.875rem;
 }
 
+.results,
+.statistics {
+  margin-top: 0.85rem;
+  padding: clamp(0.85rem, 4vw, 1.375rem);
+  border: 1px solid #d9dfcf;
+  border-radius: 1.375rem;
+  background: #fcfcf6;
+}
+
+.results {
+  box-shadow: 0 1rem 2.5rem #20322512;
+}
+
+.results-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.outcome {
+  padding: 0.25rem 0.65rem;
+  border-radius: 1rem;
+  background: #edf1e6;
+  color: #49594b;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.outcome.solved {
+  background: #dff0b8;
+  color: #2f4a1d;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+}
+
+.metrics div {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.3rem;
+  padding: 0.55rem clamp(0.35rem, 2vw, 0.75rem);
+  border-radius: 0.65rem;
+  background: #edf1e6;
+}
+
+.metrics dt,
+.results-note,
+.share-feedback {
+  color: #49594b;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.metrics dt {
+  overflow-wrap: anywhere;
+}
+
+.metrics dd {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.metrics dd span {
+  color: #49594b;
+  font-size: 0.75rem;
+}
+
+.results-note,
+.share-feedback {
+  margin: 0.5rem 0 0;
+}
+
+.share {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.85rem;
+  padding: 0.55rem 0.8rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: #1c3026;
+  color: #f7f8ee;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.share-feedback:empty {
+  margin: 0;
+}
+
 @media (hover: hover) {
   .tile:not(:disabled):hover {
     border-color: white;
@@ -182,6 +288,10 @@ h1 span {
 
   .restart:not(:disabled):hover {
     background: #e1e9d8;
+  }
+
+  .share:hover {
+    background: #304638;
   }
 }
 

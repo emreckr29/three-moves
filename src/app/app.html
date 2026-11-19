@@ -20,10 +20,10 @@
           <div>{{ movesLeft() }} {{ movesLeft() === 1 ? 'move left' : 'moves left' }}</div>
           @switch (status()) {
             @case ('won') {
-              <div>You win! All lights are off.</div>
+              <div>You win! {{ lightsLeft() }} of {{ lightCount }} lights left.</div>
             }
             @case ('lost') {
-              <div>Out of moves. Try again!</div>
+              <div>Out of moves. {{ lightsLeft() }} of {{ lightCount }} lights left.</div>
             }
           }
         </div>
@@ -51,5 +51,55 @@
       }
     </div>
     <p class="hint">Tap a tile to flip its entire row and column.</p>
+  </section>
+
+  @if (result(); as result) {
+    <section class="results" aria-labelledby="results-title">
+      <div class="results-header">
+        <h2 id="results-title">Daily results</h2>
+        <span class="outcome" [class.solved]="result.best === 0">
+          {{ result.best === 0 ? 'Solved' : 'Unsolved' }}
+        </span>
+      </div>
+      <dl class="metrics">
+        <div>
+          <dt>First attempt</dt>
+          <dd>
+            {{ result.first }}<span> / {{ lightCount }}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>Best result</dt>
+          <dd>
+            {{ result.best }}<span> / {{ lightCount }}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>Total attempts</dt>
+          <dd>{{ result.attempts }}</dd>
+        </div>
+      </dl>
+      <p class="results-note">Scores show how many lights were left on.</p>
+      <button type="button" class="share" (click)="shareResult()">Share Result</button>
+      <p class="share-feedback" role="status">{{ shareFeedback() }}</p>
+    </section>
+  }
+
+  <section class="statistics" aria-labelledby="statistics-title">
+    <h2 id="statistics-title">Statistics</h2>
+    <dl class="metrics">
+      <div>
+        <dt>Current win streak</dt>
+        <dd>{{ statistics().currentStreak }}</dd>
+      </div>
+      <div>
+        <dt>Longest win streak</dt>
+        <dd>{{ statistics().longestStreak }}</dd>
+      </div>
+      <div>
+        <dt>Completed challenges</dt>
+        <dd>{{ statistics().completedChallenges }}</dd>
+      </div>
+    </dl>
   </section>
 </main>

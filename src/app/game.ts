@@ -23,9 +23,13 @@ export function createGame(startingMoves: readonly Move[]): GameState {
   return { board, moves: [] };
 }
 
-export function gameStatus({ board, moves }: GameState): GameStatus {
-  if (board.every((row) => row.every((lit) => !lit))) return 'won';
-  return moves.length >= MOVE_LIMIT ? 'lost' : 'playing';
+export function lightsRemaining({ board }: GameState): number {
+  return board.reduce((total, row) => total + row.filter(Boolean).length, 0);
+}
+
+export function gameStatus(game: GameState): GameStatus {
+  if (lightsRemaining(game) === 0) return 'won';
+  return game.moves.length >= MOVE_LIMIT ? 'lost' : 'playing';
 }
 
 export function playMove(game: GameState, row: number, column: number): GameState {
