@@ -1,0 +1,52 @@
+<main class="game">
+  <header class="intro">
+    <span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <h1>Three Moves<span>.</span></h1>
+    <p>Turn off every light in three moves or fewer.</p>
+  </header>
+
+  <section class="puzzle" aria-label="Light puzzle">
+    <div class="toolbar">
+      <div class="moves">
+        <div class="move-slots" aria-hidden="true">
+          @for (slot of moveSlots; track slot) {
+            <span [class.available]="slot < movesLeft()"></span>
+          }
+        </div>
+        <span role="status">
+          @switch (status()) {
+            @case ('won') {
+              You win! All lights are off.
+            }
+            @case ('lost') {
+              Out of moves. Try again!
+            }
+            @default {
+              {{ movesLeft() }} {{ movesLeft() === 1 ? 'move left' : 'moves left' }}
+            }
+          }
+        </span>
+      </div>
+      <button type="button" class="restart" (click)="restart()">Restart</button>
+    </div>
+
+    <div class="board" role="group" aria-label="4 by 4 light board">
+      @for (row of game().board; track $index; let r = $index) {
+        @for (lit of row; track $index; let c = $index) {
+          <button
+            type="button"
+            class="tile"
+            [class.lit]="lit"
+            [attr.aria-label]="'Row ' + (r + 1) + ', column ' + (c + 1)"
+            [attr.aria-pressed]="lit"
+            [disabled]="status() !== 'playing'"
+            (click)="selectTile(r, c)"
+          >
+            <span class="light" aria-hidden="true"></span>
+          </button>
+        }
+      }
+    </div>
+    <p class="hint">Tap a tile to flip its entire row and column.</p>
+  </section>
+</main>

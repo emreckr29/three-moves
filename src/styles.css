@@ -1,0 +1,10 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at top, #f7f8ee, #e9eee0);
+  color: #192d22;
+  font-family: system-ui, sans-serif;
+}
