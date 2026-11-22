@@ -2,34 +2,72 @@
   <header class="intro">
     <span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     <h1>Three Moves<span>.</span></h1>
-    <p class="challenge-date">
-      Daily Challenge · <time [attr.datetime]="date()">{{ date() }}</time> UTC
-    </p>
-    <p>Turn off every light in three moves.</p>
+    <div class="mode-options" role="group" aria-label="Game mode">
+      <button type="button" [attr.aria-pressed]="!practice()" (click)="openDaily()">
+        Daily Challenge
+      </button>
+      <button type="button" [attr.aria-pressed]="practice()" (click)="openPractice(1)">
+        Practice
+      </button>
+    </div>
+    @if (practice()) {
+      <p>Try turning off every light in one or two moves.</p>
+    } @else {
+      <p class="challenge-date">
+        <time [attr.datetime]="date()">{{ date() }}</time> UTC
+      </p>
+      <p>Leave as few lights on as you can in exactly three moves.</p>
+    }
   </header>
 
   <section class="puzzle" aria-label="Light puzzle">
+    @if (practice()) {
+      <div class="mode-options practice-options" role="group" aria-label="Practice puzzle">
+        <button
+          type="button"
+          [attr.aria-pressed]="game().moveLimit === 1"
+          (click)="openPractice(1)"
+        >
+          1 move
+        </button>
+        <button
+          type="button"
+          [attr.aria-pressed]="game().moveLimit === 2"
+          (click)="openPractice(2)"
+        >
+          2 moves
+        </button>
+      </div>
+    }
     <div class="toolbar">
       <div class="moves">
         <div class="move-slots" aria-hidden="true">
-          @for (slot of moveSlots; track slot) {
+          @for (slot of moveSlots(); track slot) {
             <span [class.available]="slot < movesLeft()"></span>
           }
         </div>
         <div role="status">
-          <div>{{ movesLeft() }} {{ movesLeft() === 1 ? 'move left' : 'moves left' }}</div>
           @switch (status()) {
-            @case ('won') {
-              <div>You win! {{ lightsLeft() }} of {{ lightCount }} lights left.</div>
+            @case ('playing') {
+              {{ movesLeft() }} {{ movesLeft() === 1 ? 'move left' : 'moves left' }}
             }
-            @case ('lost') {
-              <div>Out of moves. {{ lightsLeft() }} of {{ lightCount }} lights left.</div>
+            @case ('perfect') {
+              Perfect! 0 of {{ lightCount }} lights remaining.
+            }
+            @case ('complete') {
+              {{ lightsLeft() <= 4 ? 'Great score!' : 'Nice work!' }}
+              {{ lightsLeft() }} of {{ lightCount }} lights remaining.
             }
           }
         </div>
       </div>
-      <button type="button" class="restart" [disabled]="status() === 'won'" (click)="restart()">
-        {{ status() === 'lost' ? 'Retry' : 'Restart' }}
+      <button
+        type="button"
+        class="restart"
+        [disabled]="!practice() && status() === 'perfect'"
+        (click)="restart()"
+      >
+        {{ status() === 'playing' ? 'Restart' : 'Retry' }}
       </button>
     </div>
 
@@ -37,12 +75,18 @@
       @for (row of game().board; track $index; let r = $index) {
         @for (lit of row; track $index; let c = $index) {
           <button
+            #tile
             type="button"
             class="tile"
             [class.lit]="lit"
+            [class.previewed]="preview()?.[0] === r || preview()?.[1] === c"
             [attr.aria-label]="'Row ' + (r + 1) + ', column ' + (c + 1)"
             [attr.aria-pressed]="lit"
             [disabled]="status() !== 'playing'"
+            (pointerenter)="previewPointer($event, [r, c])"
+            (pointerleave)="previewPointer($event, null)"
+            (focus)="previewFocus(tile, r, c)"
+            (blur)="clearFocus()"
             (click)="selectTile(r, c)"
           >
             <span class="light" aria-hidden="true"></span>
@@ -50,56 +94,74 @@
         }
       }
     </div>
-    <p class="hint">Tap a tile to flip its entire row and column.</p>
+    <p class="hint">
+      @if (status() === 'complete') {
+        Try again to see if you can leave fewer lights on.
+      } @else if (status() === 'playing') {
+        Select a tile to flip its entire row and column.
+      } @else if (practice() && game().moveLimit === 1) {
+        Ready for the two-move puzzle?
+      } @else if (practice()) {
+        Ready for the Daily Challenge?
+      } @else {
+        You turned every light off in three moves.
+      }
+    </p>
   </section>
 
-  @if (result(); as result) {
-    <section class="results" aria-labelledby="results-title">
-      <div class="results-header">
-        <h2 id="results-title">Daily results</h2>
-        <span class="outcome" [class.solved]="result.best === 0">
-          {{ result.best === 0 ? 'Solved' : 'Unsolved' }}
-        </span>
-      </div>
+  @if (!practice()) {
+    @if (result(); as result) {
+      <section class="results" aria-labelledby="results-title">
+        <div class="results-header">
+          <h2 id="results-title">Daily results</h2>
+          @if (result.best === 0) {
+            <span class="outcome">Perfect</span>
+          }
+        </div>
+        <dl class="metrics">
+          <div>
+            <dt>First attempt</dt>
+            <dd>
+              {{ result.first }}<span> / {{ lightCount }}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>Best score</dt>
+            <dd>
+              {{ result.best }}<span> / {{ lightCount }}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>Total attempts</dt>
+            <dd>{{ result.attempts }}</dd>
+          </div>
+        </dl>
+        <p class="results-note">Scores show the number of lights remaining.</p>
+        <button type="button" class="share" (click)="shareResult()">Share Result</button>
+        <p class="share-feedback" role="status">{{ shareFeedback() }}</p>
+      </section>
+    }
+
+    <section class="statistics" aria-labelledby="statistics-title">
+      <h2 id="statistics-title">Daily statistics</h2>
       <dl class="metrics">
         <div>
-          <dt>First attempt</dt>
-          <dd>
-            {{ result.first }}<span> / {{ lightCount }}</span>
-          </dd>
+          <dt>Days played</dt>
+          <dd>{{ statistics().daysPlayed }}</dd>
         </div>
         <div>
-          <dt>Best result</dt>
-          <dd>
-            {{ result.best }}<span> / {{ lightCount }}</span>
-          </dd>
+          <dt>Perfect days</dt>
+          <dd>{{ statistics().perfectDays }}</dd>
         </div>
         <div>
-          <dt>Total attempts</dt>
-          <dd>{{ result.attempts }}</dd>
+          <dt>Current Perfect streak</dt>
+          <dd>{{ statistics().currentPerfectStreak }}</dd>
+        </div>
+        <div>
+          <dt>Longest Perfect streak</dt>
+          <dd>{{ statistics().longestPerfectStreak }}</dd>
         </div>
       </dl>
-      <p class="results-note">Scores show how many lights were left on.</p>
-      <button type="button" class="share" (click)="shareResult()">Share Result</button>
-      <p class="share-feedback" role="status">{{ shareFeedback() }}</p>
     </section>
   }
-
-  <section class="statistics" aria-labelledby="statistics-title">
-    <h2 id="statistics-title">Statistics</h2>
-    <dl class="metrics">
-      <div>
-        <dt>Current win streak</dt>
-        <dd>{{ statistics().currentStreak }}</dd>
-      </div>
-      <div>
-        <dt>Longest win streak</dt>
-        <dd>{{ statistics().longestStreak }}</dd>
-      </div>
-      <div>
-        <dt>Completed challenges</dt>
-        <dd>{{ statistics().completedChallenges }}</dd>
-      </div>
-    </dl>
-  </section>
 </main>
