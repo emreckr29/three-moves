@@ -15,42 +15,45 @@ describe('daily results', () => {
     expect(recordAttempt(solved, 0)).toBe(solved);
   });
 
-  it('counts completed dates and UTC win streaks across month boundaries', () => {
-    const won = recordAttempt(recordAttempt(null, 8), 0);
+  it('counts participation separately from Perfect days and UTC Perfect streaks', () => {
+    const perfect = recordAttempt(recordAttempt(null, 8), 0);
     const history = {
-      '2026-10-30': won,
-      '2026-10-31': won,
-      '2026-11-01': won,
+      '2026-10-30': perfect,
+      '2026-10-31': perfect,
+      '2026-11-01': perfect,
       '2026-11-02': recordAttempt(null, 4),
-      '2026-11-04': won,
+      '2026-11-04': perfect,
     };
 
     expect(dailyStatistics({}, '2026-11-01')).toEqual({
-      completedChallenges: 0,
-      currentStreak: 0,
-      longestStreak: 0,
+      daysPlayed: 0,
+      perfectDays: 0,
+      currentPerfectStreak: 0,
+      longestPerfectStreak: 0,
     });
     expect(dailyStatistics(history, '2026-11-02')).toEqual({
-      completedChallenges: 4,
-      currentStreak: 3,
-      longestStreak: 3,
+      daysPlayed: 4,
+      perfectDays: 3,
+      currentPerfectStreak: 3,
+      longestPerfectStreak: 3,
     });
-    expect(dailyStatistics(history, '2026-11-03').currentStreak).toBe(0);
+    expect(dailyStatistics(history, '2026-11-03').currentPerfectStreak).toBe(0);
     expect(dailyStatistics(history, '2026-11-04')).toEqual({
-      completedChallenges: 5,
-      currentStreak: 1,
-      longestStreak: 3,
+      daysPlayed: 5,
+      perfectDays: 4,
+      currentPerfectStreak: 1,
+      longestPerfectStreak: 3,
     });
   });
 
-  it('formats share text from scores alone and includes attempts only when solved', () => {
+  it('shares lights remaining and celebrates Perfect with the attempt count', () => {
     const date = '2026-11-19';
     const first = recordAttempt(null, 8);
     expect(shareText(date, first)).toBe(
-      'Three Moves — 2026-11-19 UTC\nFirst attempt: 8/16 lights left\nBest result: 8/16 lights left',
+      'Three Moves — 2026-11-19 UTC\nFirst attempt: 8/16 lights remaining\nBest score: 8/16 lights remaining',
     );
     expect(shareText(date, recordAttempt(first, 0))).toBe(
-      'Three Moves — 2026-11-19 UTC\nFirst attempt: 8/16 lights left\nBest result: 0/16 lights left\nSolved in 2 attempts',
+      'Three Moves — 2026-11-19 UTC\nFirst attempt: 8/16 lights remaining\nBest score: 0/16 lights remaining — Perfect!\nReached in 2 attempts',
     );
   });
 });

@@ -57,11 +57,17 @@ h1 span {
   font-weight: 650;
 }
 
-.puzzle {
+.puzzle,
+.results,
+.statistics {
   padding: clamp(0.75rem, 4vw, 1.375rem);
   border: 1px solid #d9dfcf;
   border-radius: 1.375rem;
   background: #fcfcf6;
+}
+
+.puzzle,
+.results {
   box-shadow: 0 1rem 2.5rem #20322512;
 }
 
@@ -96,7 +102,21 @@ h1 span {
   background: #567b37;
 }
 
-.restart {
+.mode-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.practice-options {
+  justify-content: start;
+  margin-top: 0;
+}
+
+.restart,
+.mode-options button {
   min-height: 44px;
   padding: 0 0.8rem;
   border: 1px solid #cbd5c3;
@@ -107,6 +127,12 @@ h1 span {
   font-size: 0.875rem;
   font-weight: 650;
   cursor: pointer;
+}
+
+.mode-options [aria-pressed='true'] {
+  border-color: #1c3026;
+  background: #1c3026;
+  color: #f7f8ee;
 }
 
 .board {
@@ -150,6 +176,14 @@ h1 span {
   box-shadow: 0 0 0 0.24rem #415a2926;
 }
 
+.tile.previewed {
+  box-shadow: inset 0 0 0 2px #eaf4da;
+}
+
+.tile.lit.previewed {
+  box-shadow: inset 0 0 0 2px #39582d;
+}
+
 .tile:disabled,
 .restart:disabled {
   cursor: default;
@@ -165,6 +199,7 @@ h1 span {
 }
 
 .restart:focus-visible,
+.mode-options button:focus-visible,
 .share:focus-visible {
   outline: 2px solid #39582d;
   outline-offset: 2px;
@@ -179,14 +214,6 @@ h1 span {
 .results,
 .statistics {
   margin-top: 0.85rem;
-  padding: clamp(0.85rem, 4vw, 1.375rem);
-  border: 1px solid #d9dfcf;
-  border-radius: 1.375rem;
-  background: #fcfcf6;
-}
-
-.results {
-  box-shadow: 0 1rem 2.5rem #20322512;
 }
 
 .results-header {
@@ -205,15 +232,10 @@ h2 {
 .outcome {
   padding: 0.25rem 0.65rem;
   border-radius: 1rem;
-  background: #edf1e6;
-  color: #49594b;
-  font-size: 0.8rem;
-  font-weight: 650;
-}
-
-.outcome.solved {
   background: #dff0b8;
   color: #2f4a1d;
+  font-size: 0.8rem;
+  font-weight: 650;
 }
 
 .metrics {
@@ -221,6 +243,10 @@ h2 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
   margin: 0.75rem 0 0;
+}
+
+.statistics .metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .metrics div {
@@ -282,11 +308,8 @@ h2 {
 }
 
 @media (hover: hover) {
-  .tile:not(:disabled):hover {
-    border-color: white;
-  }
-
-  .restart:not(:disabled):hover {
+  .restart:not(:disabled):hover,
+  .mode-options [aria-pressed='false']:hover {
     background: #e1e9d8;
   }
 

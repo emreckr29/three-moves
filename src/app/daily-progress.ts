@@ -26,7 +26,7 @@ export function loadProgress(date: string): DailyProgress {
   const win =
     readProgress(progressKey(date, 'win'), initial) ??
     readProgress(`three-moves:v0.2:${date}:win`, initial);
-  if (win && gameStatus(win.game) === 'won') return win;
+  if (win && gameStatus(win.game) === 'perfect') return win;
 
   return (
     readProgress(progressKey(date, 'attempt'), initial) ??
@@ -64,7 +64,7 @@ export function saveProgress(
 ): DailyProgress {
   const saved = loadProgress(date);
   if (
-    gameStatus(saved.game) === 'won' ||
+    gameStatus(saved.game) === 'perfect' ||
     (saved.result?.attempts ?? 0) > (previous.result?.attempts ?? 0)
   ) {
     return saved;
@@ -75,8 +75,8 @@ export function saveProgress(
     status === 'playing' ? previous.result : recordAttempt(previous.result, lightsRemaining(game));
 
   try {
-    // Keep the win separate so a concurrent attempt cannot overwrite it.
-    const kind = status === 'won' ? 'win' : 'attempt';
+    // Retain the existing win key so an older attempt cannot overwrite a Perfect result.
+    const kind = status === 'perfect' ? 'win' : 'attempt';
     localStorage.setItem(progressKey(date, kind), JSON.stringify({ moves: game.moves, result }));
   } catch {
     // Keep the current attempt in memory when the browser cannot save it.

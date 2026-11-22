@@ -21,36 +21,38 @@ export function recordAttempt(previous: DailyResult | null, lights: number): Dai
 }
 
 export function dailyStatistics(history: ResultHistory, today: string) {
-  const completed = Object.keys(history).filter((date) => date <= today && history[date]);
-  const wins = completed.filter((date) => history[date]?.best === 0).sort();
-  let previousWin = -Infinity;
+  const played = Object.keys(history).filter((date) => date <= today && history[date]);
+  const perfect = played.filter((date) => history[date]?.best === 0).sort();
+  let previousPerfect = -Infinity;
   let streak = 0;
-  let longestStreak = 0;
+  let longestPerfectStreak = 0;
 
-  for (const date of wins) {
+  for (const date of perfect) {
     const day = Date.parse(date);
-    streak = day - previousWin === DAY_MS ? streak + 1 : 1;
-    longestStreak = Math.max(longestStreak, streak);
-    previousWin = day;
+    streak = day - previousPerfect === DAY_MS ? streak + 1 : 1;
+    longestPerfectStreak = Math.max(longestPerfectStreak, streak);
+    previousPerfect = day;
   }
 
   return {
-    completedChallenges: completed.length,
-    currentStreak: Date.parse(today) - previousWin <= DAY_MS ? streak : 0,
-    longestStreak,
+    daysPlayed: played.length,
+    perfectDays: perfect.length,
+    currentPerfectStreak: Date.parse(today) - previousPerfect <= DAY_MS ? streak : 0,
+    longestPerfectStreak,
   };
 }
 
 export function shareText(date: string, result: DailyResult): string {
   const lightCount = BOARD_SIZE ** 2;
+  const perfect = result.best === 0;
   const lines = [
     `Three Moves — ${date} UTC`,
-    `First attempt: ${result.first}/${lightCount} lights left`,
-    `Best result: ${result.best}/${lightCount} lights left`,
+    `First attempt: ${result.first}/${lightCount} lights remaining`,
+    `Best score: ${result.best}/${lightCount} lights remaining${perfect ? ' — Perfect!' : ''}`,
   ];
 
-  if (result.best === 0) {
-    lines.push(`Solved in ${result.attempts} ${result.attempts === 1 ? 'attempt' : 'attempts'}`);
+  if (perfect) {
+    lines.push(`Reached in ${result.attempts} ${result.attempts === 1 ? 'attempt' : 'attempts'}`);
   }
 
   return lines.join('\n');

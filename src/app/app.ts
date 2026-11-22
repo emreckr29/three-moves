@@ -5,10 +5,11 @@ import {
   BOARD_SIZE,
   gameStatus,
   lightsRemaining,
-  MOVE_LIMIT,
   playMove,
   type GameState,
+  type Move,
 } from './game';
+import { createPracticeGame, type PracticeLength } from './practice-puzzle';
 import { dailyStatistics, shareText } from './results';
 
 @Component({
@@ -25,14 +26,23 @@ import { dailyStatistics, shareText } from './results';
 export class App {
   private readonly challenge = signal(this.loadChallenge(utcDate(new Date())));
   private readonly history = signal(loadResultHistory());
+  private readonly practiceGame = signal<GameState | null>(null);
+  private readonly hoveredTile = signal<Move | null>(null);
+  private readonly focusedTile = signal<Move | null>(null);
+  protected readonly practice = computed(() => this.practiceGame() !== null);
   protected readonly date = computed(() => this.challenge().date);
-  protected readonly game = computed(() => this.challenge().progress.game);
+  protected readonly game = computed(() => this.practiceGame() ?? this.challenge().progress.game);
   protected readonly result = computed(() => this.challenge().progress.result);
   protected readonly status = computed(() => gameStatus(this.game()));
   protected readonly lightsLeft = computed(() => lightsRemaining(this.game()));
   protected readonly lightCount = BOARD_SIZE ** 2;
-  protected readonly movesLeft = computed(() => MOVE_LIMIT - this.game().moves.length);
-  protected readonly moveSlots = Array.from({ length: MOVE_LIMIT }, (_, index) => index);
+  protected readonly movesLeft = computed(() => this.game().moveLimit - this.game().moves.length);
+  protected readonly moveSlots = computed(() =>
+    Array.from({ length: this.game().moveLimit }, (_, index) => index),
+  );
+  protected readonly preview = computed(() =>
+    this.status() === 'playing' ? (this.hoveredTile() ?? this.focusedTile()) : null,
+  );
   protected readonly statistics = computed(() =>
     dailyStatistics({ ...this.history(), [this.date()]: this.result() ?? undefined }, this.date()),
   );
@@ -44,16 +54,57 @@ export class App {
   }
 
   protected selectTile(row: number, column: number): void {
-    if (this.refreshDate()) return;
+    if (this.refreshDate() && !this.practice()) return;
 
     const previous = this.game();
     const game = playMove(previous, row, column);
-    if (game !== previous) this.commit(game);
+    if (game === previous) return;
+
+    if (this.practice()) {
+      this.practiceGame.set(game);
+    } else {
+      this.commit(game);
+    }
   }
 
   protected restart(): void {
-    if (this.refreshDate() || this.status() === 'won') return;
+    const practice = this.practiceGame();
+    if (practice) {
+      this.openPractice(practice.moveLimit === 1 ? 1 : 2);
+      return;
+    }
+
+    if (this.refreshDate() || this.status() === 'perfect') return;
+    this.clearPreview();
     this.commit(createDailyGame(this.date()));
+  }
+
+  protected openDaily(): void {
+    this.refreshDate();
+    this.practiceGame.set(null);
+    this.clearPreview();
+  }
+
+  protected openPractice(length: PracticeLength): void {
+    this.practiceGame.set(createPracticeGame(length));
+    this.clearPreview();
+  }
+
+  protected previewPointer(event: PointerEvent, tile: Move | null): void {
+    if (event.pointerType === 'mouse') this.hoveredTile.set(tile);
+  }
+
+  protected previewFocus(button: HTMLButtonElement, row: number, column: number): void {
+    if (button.matches(':focus-visible')) this.focusedTile.set([row, column]);
+  }
+
+  protected clearFocus(): void {
+    this.focusedTile.set(null);
+  }
+
+  private clearPreview(): void {
+    this.hoveredTile.set(null);
+    this.clearFocus();
   }
 
   protected refreshDate(): boolean {
@@ -63,6 +114,7 @@ export class App {
     this.challenge.set(this.loadChallenge(date));
     this.history.set(loadResultHistory());
     this.shareFeedback.set('');
+    if (!this.practice()) this.clearPreview();
     return true;
   }
 

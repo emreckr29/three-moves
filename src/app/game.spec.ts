@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { createGame, gameStatus, playMove, toggleLights, type Move } from './game';
+import {
+  BOARD_SIZE,
+  createGame,
+  gameStatus,
+  lightsRemaining,
+  MOVE_LIMIT,
+  playMove,
+  toggleLights,
+  type Move,
+} from './game';
+import { createPracticeGame } from './practice-puzzle';
 
 const startingMoves: readonly Move[] = [
   [0, 0],
@@ -37,30 +47,33 @@ describe('Three Moves rules', () => {
         [false, true, false, true],
       ],
       moves: [],
+      moveLimit: MOVE_LIMIT,
     });
   });
 
-  it('wins when the third move turns off the last lights', () => {
+  it('scores Perfect when the third move turns off the last lights', () => {
     const first = playMove(createGame(startingMoves), 0, 0);
     const second = playMove(first, 1, 2);
     const third = playMove(second, 3, 3);
 
     expect(gameStatus(first)).toBe('playing');
     expect(gameStatus(second)).toBe('playing');
-    expect(third).toEqual({ board: emptyBoard, moves: startingMoves });
-    expect(gameStatus(third)).toBe('won');
+    expect(third).toEqual({ board: emptyBoard, moves: startingMoves, moveLimit: MOVE_LIMIT });
+    expect(gameStatus(third)).toBe('perfect');
   });
 
-  it('wins immediately if the board is cleared before the move limit', () => {
+  it('requires the full move count even if a board is cleared early', () => {
     const game = createGame([[0, 0]]);
-    const won = playMove(game, 0, 0);
+    const cleared = playMove(game, 0, 0);
 
-    expect(won.moves).toHaveLength(1);
-    expect(gameStatus(won)).toBe('won');
-    expect(playMove(won, 0, 1)).toBe(won);
+    expect(lightsRemaining(cleared)).toBe(0);
+    expect(gameStatus(cleared)).toBe('playing');
+    const third = playMove(playMove(cleared, 0, 1), 0, 1);
+    expect(third.moves).toHaveLength(3);
+    expect(gameStatus(third)).toBe('perfect');
   });
 
-  it('loses after three moves with lights still on and ignores further moves', () => {
+  it('completes with lights still on after three moves and ignores further moves', () => {
     const first = playMove(createGame(startingMoves), 0, 0);
     const second = playMove(first, 0, 0);
     const third = playMove(second, 0, 0);
@@ -68,7 +81,21 @@ describe('Three Moves rules', () => {
     expect(gameStatus(second)).toBe('playing');
     expect(third.moves).toHaveLength(3);
     expect(third.board.flat()).toContain(true);
-    expect(gameStatus(third)).toBe('lost');
+    expect(gameStatus(third)).toBe('complete');
     expect(playMove(third, 3, 3)).toBe(third);
+  });
+
+  it('provides fixed practice puzzles with exact one- and two-move solutions', () => {
+    const one = createPracticeGame(1);
+    const two = createPracticeGame(2);
+    expect(lightsRemaining(one)).toBeGreaterThan(0);
+    expect(gameStatus(playMove(one, 1, 1))).toBe('perfect');
+    expect(two).toEqual(createPracticeGame(2));
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let column = 0; column < BOARD_SIZE; column++) {
+        expect(lightsRemaining(playMove(two, row, column))).toBeGreaterThan(0);
+      }
+    }
+    expect(gameStatus(playMove(playMove(two, 0, 0), 3, 3))).toBe('perfect');
   });
 });
