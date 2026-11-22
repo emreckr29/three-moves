@@ -42,7 +42,11 @@ export function dailyStatistics(history: ResultHistory, today: string) {
   };
 }
 
-export function shareText(date: string, result: DailyResult): string {
+export function shareText(
+  date: string,
+  result: DailyResult,
+  productionGameUrl: string | null = null,
+): string {
   const lightCount = BOARD_SIZE ** 2;
   const perfect = result.best === 0;
   const lines = [
@@ -54,6 +58,12 @@ export function shareText(date: string, result: DailyResult): string {
   if (perfect) {
     lines.push(`Reached in ${result.attempts} ${result.attempts === 1 ? 'attempt' : 'attempts'}`);
   }
+
+  lines.push(
+    '',
+    'Can you match or beat my first attempt in three moves? Play the Daily Challenge.',
+  );
+  if (productionGameUrl) lines.push(productionGameUrl);
 
   return lines.join('\n');
 }

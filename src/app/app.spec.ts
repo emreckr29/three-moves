@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './app';
+import { PRODUCTION_GAME_URL } from './app.config';
 import { progressKey } from './daily-progress';
 
 const date = '2026-11-19';
@@ -209,9 +210,16 @@ describe('Daily Challenge', () => {
     expect(game.status()).toContain('2 moves left');
   });
 
-  it.each(['native', 'clipboard'] as const)('shares the daily result using %s', async (method) => {
+  it.each([
+    { method: 'native', perfect: true },
+    { method: 'native', perfect: false },
+    { method: 'clipboard', perfect: true },
+    { method: 'clipboard', perfect: false },
+  ])('shares the daily result using $method (Perfect: $perfect)', async ({ method, perfect }) => {
+    const url = 'https://three-moves.example/';
+    TestBed.overrideProvider(PRODUCTION_GAME_URL, { useValue: url });
     const game = openGame();
-    for (const index of [4, 13, 14]) game.play(index);
+    for (const index of perfect ? [4, 13, 14] : [0, 0, 0]) game.play(index);
     const share = vi.fn().mockResolvedValue(undefined);
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('navigator', {
@@ -223,8 +231,17 @@ describe('Daily Challenge', () => {
     await game.fixture.whenStable();
     game.fixture.detectChanges();
 
-    const text =
-      'Three Moves — 2026-11-19 UTC\nFirst attempt: 0/16 lights remaining\nBest score: 0/16 lights remaining — Perfect!\nReached in 1 attempt';
+    const score = perfect ? 0 : 4;
+    const text = [
+      'Three Moves — 2026-11-19 UTC',
+      `First attempt: ${score}/16 lights remaining`,
+      ...(perfect
+        ? ['Best score: 0/16 lights remaining — Perfect!', 'Reached in 1 attempt']
+        : ['Best score: 4/16 lights remaining']),
+      '',
+      'Can you match or beat my first attempt in three moves? Play the Daily Challenge.',
+      url,
+    ].join('\n');
     if (method === 'native') {
       expect(share).toHaveBeenCalledWith({ text });
       expect(writeText).not.toHaveBeenCalled();
