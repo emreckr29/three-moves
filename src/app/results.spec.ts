@@ -46,14 +46,45 @@ describe('daily results', () => {
     });
   });
 
-  it('shares lights remaining and celebrates Perfect with the attempt count', () => {
+  it('shares scores and a challenge link, with the attempt count for Perfect', () => {
     const date = '2026-11-19';
     const first = recordAttempt(null, 8);
-    expect(shareText(date, first)).toBe(
-      'Three Moves — 2026-11-19 UTC\nFirst attempt: 8/16 lights remaining\nBest score: 8/16 lights remaining',
+    const url = 'https://three-moves.example/';
+    const invitation =
+      'Can you match or beat my first attempt in three moves? Play the Daily Challenge.';
+
+    expect(shareText(date, first, url)).toBe(
+      [
+        'Three Moves — 2026-11-19 UTC',
+        'First attempt: 8/16 lights remaining',
+        'Best score: 8/16 lights remaining',
+        '',
+        invitation,
+        url,
+      ].join('\n'),
     );
-    expect(shareText(date, recordAttempt(first, 0))).toBe(
-      'Three Moves — 2026-11-19 UTC\nFirst attempt: 8/16 lights remaining\nBest score: 0/16 lights remaining — Perfect!\nReached in 2 attempts',
+    expect(shareText(date, recordAttempt(first, 0), url)).toBe(
+      [
+        'Three Moves — 2026-11-19 UTC',
+        'First attempt: 8/16 lights remaining',
+        'Best score: 0/16 lights remaining — Perfect!',
+        'Reached in 2 attempts',
+        '',
+        invitation,
+        url,
+      ].join('\n'),
+    );
+  });
+
+  it('leaves out the link when the production game URL is unconfigured', () => {
+    expect(shareText('2026-11-19', recordAttempt(null, 8), null)).toBe(
+      [
+        'Three Moves — 2026-11-19 UTC',
+        'First attempt: 8/16 lights remaining',
+        'Best score: 8/16 lights remaining',
+        '',
+        'Can you match or beat my first attempt in three moves? Play the Daily Challenge.',
+      ].join('\n'),
     );
   });
 });

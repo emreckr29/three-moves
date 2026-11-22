@@ -1,4 +1,5 @@
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { PRODUCTION_GAME_URL } from './app.config';
 import { isProgressKey, loadProgress, loadResultHistory, saveProgress } from './daily-progress';
 import { createDailyGame, utcDate } from './daily-puzzle';
 import {
@@ -24,6 +25,7 @@ import { dailyStatistics, shareText } from './results';
   templateUrl: './app.html',
 })
 export class App {
+  private readonly productionGameUrl = inject(PRODUCTION_GAME_URL);
   private readonly challenge = signal(this.loadChallenge(utcDate(new Date())));
   private readonly history = signal(loadResultHistory());
   private readonly practiceGame = signal<GameState | null>(null);
@@ -135,7 +137,7 @@ export class App {
     if (!result) return;
 
     const date = this.date();
-    const text = shareText(date, result);
+    const text = shareText(date, result, this.productionGameUrl);
     const showFeedback = (message: string) => {
       if (date === this.date() && result === this.result()) this.shareFeedback.set(message);
     };
